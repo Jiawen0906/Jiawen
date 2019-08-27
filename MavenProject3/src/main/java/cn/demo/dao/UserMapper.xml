@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper	namespace="cn.demo.dao.UserMapper">
+	<resultMap type="User" id="userRoleName">
+		<result column="roleName" property="userRoleName"/>
+	</resultMap>
+	
+	<select id="getUserList" parameterType="User" resultMap="userRoleName">
+		select u.*,r.roleName
+		from smbms_user u,smbms_role r
+		where u.userRole=r.id
+		<if test="userName != null and userName != ''">
+			and u.userName like concat('%',#{userName},'%')
+		</if>
+	</select>
+	
+	<!-- 添加用户 -->
+	<insert id="addUser" parameterType="User">
+	 insert into smbms_user(userCode,userName,userPassword,gender,birthday,phone,address,userRole,createdBy,creationDate,idPicPath
+	 ,workPicPath)
+	 values(#{userCode},#{userName},#{userPassword},#{gender},#{birthday},#{phone},#{address},#{userRole},#{createdBy},#{creationDate},
+	 #{idPicPath},#{workPicPath})
+	</insert>
+	
+<insert id="addUser2" parameterType="User">
+	 insert into smbms_user(userCode,userPassword)
+	 values(#{userCode},#{userPassword})
+	</insert>
+	
+	<!-- 根据用户编码和密码查找用户 -->
+	<select id="getLoginUser" resultType="User" parameterType="User">
+	  select * from smbms_user 
+	  where userCode=#{userCode} and userPassword=#{userPassword}
+	</select>
+	
+	<!-- 修改用户 -->
+	<update id="updateUser" parameterType="User">
+	  update smbms_user set userCode=#{userCode},userName=#{userName},userPassword=#{userPassword},
+	  gender=#{gender},birthday=#{birthday},phone=#{phone},address=#{address},userRole=#{userRole},
+	  modifyBy=#{modifyBy},modifyDate=#{modifyDate} where id=#{id}
+	</update>
+	
+	<!-- 根据主键获取用户 -->
+	<select id="getUserById" parameterType="int" resultMap="userRoleName">
+	  select u.*,r.roleName from smbms_user u,smbms_role r where u.id=#{id} and u.userRole=r.id
+	</select>
+	
+	<!-- 校验userCode是否存在 -->
+	<select id="checkUserCode" parameterType="String" resultType="User">
+	  select * from smbms_user where userCode=#{userCode}
+	</select>
+</mapper>
