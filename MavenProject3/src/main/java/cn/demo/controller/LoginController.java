@@ -9,22 +9,37 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import cn.demo.entity.User;
-import cn.demo.service.UserService;
+import cn.demo.entity.BackendUser;
+import cn.demo.entity.DevUser;
+import cn.demo.service.BackendUserService;
+import cn.demo.service.DevUserService;
+import cn.demo.util.Constants;
+
+
+
+
+
+
+
+
 
 /**
- * ²»À¹½ØµÄÇëÇó
+ * ï¿½ï¿½ï¿½ï¿½ï¿½Øµï¿½ï¿½ï¿½ï¿½ï¿½
  * @author jw
  *
  */
 @Controller
+@RequestMapping(value="/dev")
 public class LoginController {
 	private Logger log = Logger.getLogger(LoginController.class);
 	
 	@Resource
-	private UserService userService;
+	private DevUserService devUserService;
+	
+	@Resource
+	private BackendUserService backendUserService;
 	 /**
-     * Ìø×ª×¢²á½çÃæ
+     * ï¿½ï¿½×ª×¢ï¿½ï¿½ï¿½ï¿½ï¿½
      * @return
      */
 	@RequestMapping(value = "/Register",method=RequestMethod.GET)
@@ -33,14 +48,14 @@ public class LoginController {
 	}
 	
 	 /**
-     * ×¢²á½çÃæ
+     * ×¢ï¿½ï¿½ï¿½ï¿½ï¿½
      * @param user
      * @param request
      * @return
      */
-	@RequestMapping(value = "/doRegister", method = RequestMethod.POST)
+	/*@RequestMapping(value = "/doRegister", method = RequestMethod.POST)
 	public String doRegister(HttpServletRequest request,HttpSession session) {
-		//Ç°Ì¨Ìá½»µÄÓÃ»§Ãû ÃÜÂë
+		//Ç°Ì¨ï¿½á½»ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 		 String userCode=(String)request.getParameter("userCode");
 		 String userPassword=(String)request.getParameter("userPassword");
 		 User user1=new User();
@@ -57,41 +72,97 @@ public class LoginController {
 				return "Register";
 			}
 		}else{
-			session.setAttribute("message","ÓÃ»§Ãû´æÔÚ,ÇëÖØĞÂÊäÈë!");
+			session.setAttribute("message","ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½!");
 			return "Register";
 		}
-	}
+	}*/
 				
+	 /**
+     * åå°ç®¡ç†è€…æ³¨é”€
+     * @return
+     */
+	@RequestMapping(value = "/logout",method=RequestMethod.GET)
+	public String logout() {
+		return "BackLogin";
+	}
+	
+	 /**
+     * å¼€å‘è€…æ³¨é”€
+     * @return
+     */
+	@RequestMapping(value = "/devlogout")
+	public String devlogout(HttpSession session) {
+		session.removeAttribute(Constants.USER_SESSION);
+		return "DevLogin";
+	}
+	
 
 
 
 	
 	 /**
-     * Ìø×ªµÇÂ¼½çÃæ
+     * å¼€å‘è€…ç™»å½•
      * @return
      */
 	@RequestMapping(value = "/Login",method=RequestMethod.GET)
 	public String login() {
-		return "Login";
+		return "DevLogin";
 	}
 	
 	 /**
-     * ½øÈëµÇÂ¼½çÃæ
+     * ç™»å½•è·³è½¬
      * @param user
      * @param request
      * @return
      */
-	@RequestMapping(value = "/doLogin", method = RequestMethod.POST)
-	public String doLogin(User user, HttpServletRequest request,HttpSession session) {
-        log.info("½øÈëlogin,user:"+user);
-		User user1 = userService.getLoginUser(user);
-		if (user1 != null) {
-			session.setAttribute("user", user1);
-			return "redirect:/sys/user/index";
+	@RequestMapping(value = "/doDevLogin", method = RequestMethod.POST)
+	public String doLogin(DevUser user, HttpServletRequest request,HttpSession session) {
+        log.info("DevUser**********************,user:"+user);
+		user = devUserService.getLoginDevUser(user);
+		if (user != null) {
+			session.setAttribute(Constants.USER_SESSION,user);
+			return "redirect:/dev/index";
 		} else {
-			request.setAttribute("message", "ÓÃ»§Ãû»òÃÜÂë´íÎó£¬ÇëÖØĞÂÊäÈë£¡");
-			return "Login";
+			request.setAttribute("message", "ç™»å½•å¤±è´¥ï¼Œè¯·é‡æ–°ç™»å½•ï¼");
+			return "/DevLogin";
 		}
+	}
+	@RequestMapping(value = "/index")
+	public String index(HttpSession session) {
+		if(session.getAttribute(Constants.USER_SESSION)==null){
+			return "redirect:/dev/Login";
+		}
+		
+		return "devUser/index";
+	}
+
+	
+	 /**
+     * åå°ç®¡ç†è€… ç™»å½•
+     * @return
+     */
+	@RequestMapping(value = "/BackLogin",method=RequestMethod.GET)
+	public String login1() {
+		return "BackLogin";
+	}
+	
+	 /**
+     * ï¿½ï¿½ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½
+     * @param user
+     * @param request
+     * @return
+     */
+	@RequestMapping(value = "/doBackLogin", method = RequestMethod.POST)
+	public String doLogin1(BackendUser backenduser, HttpServletRequest request,HttpSession session) {
+        log.info("DevUser**********************,user:"+backenduser);
+        BackendUser backenduser1 = backendUserService.getLoginBackendUser(backenduser);
+		if (backenduser1 != null) {
+			session.setAttribute("backenduser", backenduser1);
+			return "redirect:sos/backendUser/index2";
+		} else {
+			request.setAttribute("message", "ç™»å½•å¤±è´¥ï¼Œè¯·é‡æ–°ç™»å½•ï¼");
+			return "BackLogin";
+ 		}
 	}
 
 

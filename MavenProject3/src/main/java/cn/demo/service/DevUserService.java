@@ -2,22 +2,23 @@ package cn.demo.service;
 
 import java.util.List;
 
+import cn.demo.entity.DevUser;
 import cn.demo.entity.User;
 /**
  * 
  * @author jw
  *
  */
-public interface UserService {
+public interface DevUserService {
 
 	/**
-	 *¯¢²éÑ¯
+	 *ï¿½ï¿½ï¿½ï¿½Ñ¯
 	 * @param user
 	 * @return
 	 */
 	public List<User> getUserList(User user);
 	/**
-	 * Ìí¼Ó
+	 * ï¿½ï¿½ï¿½
 	 * @param user
 	 * @return
 	 */
@@ -26,30 +27,28 @@ public interface UserService {
 	public int addUser2(User user);
 	
 	/**
-	 * ÓÃ»§µÇÂ¼
-	 * @param userCode
-	 * @param userPassword
+	 * ç™»å½•
+	 * @param user
 	 * @return
-	 * @throws Exception
 	 */
-	public User getLoginUser(User user);
+	public DevUser getLoginDevUser(DevUser user);
 	
 	/**
-	 * ÐÞ¸ÄÓÃ»§
+	 * ï¿½Þ¸ï¿½ï¿½Ã»ï¿½
 	 * @param user
 	 * @return
 	 */
 	public Integer updateUser(User user);
 	
 	/**
-	 * ¸ù¾ÝÖ÷¼ü»ñÈ¡ÓÃ»§
+	 * ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¡ï¿½Ã»ï¿½
 	 * @param id
 	 * @return
 	 */
 	public User getUserById(Integer id);
 	
 	/**
-	 * Ð£ÑéuserCodeÊÇ·ñ´æÔÚ
+	 * Ð£ï¿½ï¿½userCodeï¿½Ç·ï¿½ï¿½ï¿½ï¿½
 	 * @param userCode
 	 * @return
 	 */

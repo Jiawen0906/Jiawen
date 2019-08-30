@@ -7,20 +7,30 @@ import javax.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import cn.demo.dao.UserMapper;
+import cn.demo.dao.DevUserMapper;
+import cn.demo.entity.DevUser;
 import cn.demo.entity.User;
 
 /**
- * UserÒµÎñÂß¼­²ãÊµÏÖÀà
+ * UserÒµï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½Êµï¿½ï¿½ï¿½ï¿½
  * @author lxh
  *
  */
-@Service("userService")
+@Service("devUserService")
 @Transactional
-public class UserServiceImpl implements UserService {
+public class DevUserServiceImpl implements DevUserService {
 
 	@Resource
-	private UserMapper userMapper;
+	private DevUserMapper userMapper;
+	
+	/**
+	 * ç™»å½•
+	 * @param user
+	 * @return
+	 */
+	public DevUser getLoginDevUser(DevUser user){
+		return userMapper.getLoginDevUser(user);
+	}
 
 	public List<User> getUserList(User user) {
 		// TODO Auto-generated method stub
@@ -36,14 +46,7 @@ public class UserServiceImpl implements UserService {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-    /**
-     * ÓÃ»§µÇÂ¼
-     */
-	public User getLoginUser(User user) {
-		
-		return userMapper.getLoginUser(user);
-	}
-
+  
 	public Integer updateUser(User user) {
 		// TODO Auto-generated method stub
 		return null;

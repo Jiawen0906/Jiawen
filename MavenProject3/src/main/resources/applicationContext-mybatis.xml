@@ -30,7 +30,7 @@
 <aop:aspectj-autoproxy/>
 <tx:advice id="txAdvice">
   <tx:attributes>
-    <tx:method name="smbms" rollback-for="Exception"/>
+    <tx:method name="appinfodb" rollback-for="Exception"/>
   </tx:attributes>
 </tx:advice>
 <aop:config proxy-target-class="true">

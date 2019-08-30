@@ -7,20 +7,22 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
-import cn.demo.entity.User;
+import cn.demo.entity.DevUser;
 
 public class LoginInterceptor extends HandlerInterceptorAdapter{
 	
 	public boolean preHandle(HttpServletRequest request,HttpServletResponse response,
 			Object handler) throws IOException{
-		User user = (User) request.getSession().getAttribute("user");
+		DevUser user = (DevUser) request.getSession().getAttribute(Constants.USER_SESSION);
 		if(user == null){
-			response.sendRedirect(request.getContextPath()+"/Login");
+			response.sendRedirect(request.getContextPath()+"/DevLogin");
 			
 			return false;
 		}else{
 			return true;
 		}
+		
 	}
-
+	
+	
 }

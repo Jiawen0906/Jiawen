@@ -22,9 +22,9 @@
   <div class="content">
 	    <h2>------------- APP开发者平台  -------------</h2>
 	
-		<form action="${pageContext.request.contextPath }/doLogin" method="post">
-		<input type="text" name="serName" id="Username" value="请输入用户名" style="width:400px;height:30px;"><br />
-		<input type="text" name="userPassword" id="Password" value="请输入密码" style="width:400px;height:30px;"><br />
+		<form action="${pageContext.request.contextPath }/dev/doDevLogin" method="post">
+		<input type="text" name="devCode" id="Username" placeholder="请输入用户名"  required="" style="width:400px;height:30px;"><br />
+		<input type="password" name="devPassword" id="Password" placeholder="请输入密码"  required="" style="width:400px;height:30px;"><br />
 			<input type="submit" value="登录" style="margin-left:140px;width:50px;height:30px;background:#ccc;">
 			<input type="submit" value="重填" style="margin-left:20px;width:50px;height:30px;"><br/><hr/><br/>
 

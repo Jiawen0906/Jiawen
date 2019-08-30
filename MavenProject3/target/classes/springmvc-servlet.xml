@@ -106,6 +106,13 @@
 		</mvc:interceptor>
 	</mvc:interceptors>
 	
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/sos/**"/>
+			<bean class="cn.demo.util.LoginInterceptor2"/>
+		</mvc:interceptor>
+	</mvc:interceptors>
+	
 	
 	
 	
