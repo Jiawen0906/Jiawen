@@ -12,5 +12,5 @@ public interface DataDictionaryService {
 	 * @return
 	 * @throws Exception
 	 */
-	public List<DataDictionary> getDataDictionaryList(String typeCode)throws Exception;
+	public List<DataDictionary> getDataDictionaryList(String typeCode);
 }

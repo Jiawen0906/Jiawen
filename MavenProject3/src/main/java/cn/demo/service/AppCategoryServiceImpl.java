@@ -16,7 +16,7 @@ public class AppCategoryServiceImpl implements AppCategoryService {
 	private AppCategoryMapper mapper;
 	
 	public List<AppCategory> getAppCategoryListByParentId(Integer parentId)
-			throws Exception {
+			 {
 		// TODO Auto-generated method stub
 		return mapper.getAppCategoryListByParentId(parentId);
 	}

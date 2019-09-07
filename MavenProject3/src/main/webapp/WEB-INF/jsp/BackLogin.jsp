@@ -22,7 +22,7 @@
   <div class="content">
 	    <h2>------------- 后台管理系统  -------------</h2>
 	
-		<form action="${pageContext.request.contextPath }/doBackLogin" method="post">
+		<form action="${pageContext.request.contextPath }/dev/doBackLogin" method="post">
 		<input type="text" name="userCode" id="Username" placeholder="Username"  required="" style="width:400px;height:30px;"><br />
 		<input type="password" name="userPassword" id="Password" placeholder="Password" required="" style="width:400px;height:30px;"><br />
 			<input type="submit" value="登录" style="margin-left:140px;width:50px;height:30px;background:#ccc;">

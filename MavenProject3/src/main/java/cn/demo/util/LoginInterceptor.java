@@ -15,7 +15,7 @@ public class LoginInterceptor extends HandlerInterceptorAdapter{
 			Object handler) throws IOException{
 		DevUser user = (DevUser) request.getSession().getAttribute(Constants.USER_SESSION);
 		if(user == null){
-			response.sendRedirect(request.getContextPath()+"/DevLogin");
+			response.sendRedirect(request.getContextPath()+"/dev/Login");
 			
 			return false;
 		}else{

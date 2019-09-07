@@ -18,8 +18,8 @@ public class DataDictionaryServiceImpl implements DataDictionaryService {
 	private DataDictionaryMapper mapper;
 	
 	public List<DataDictionary> getDataDictionaryList(String typeCode)
-			throws Exception {
-		// TODO Auto-generated method stub
+			{
+		
 		return mapper.getDataDictionaryList(typeCode);
 		
 	}

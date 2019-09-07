@@ -8,5 +8,5 @@ import cn.demo.entity.DataDictionary;
 @Repository("dataDictionaryMapper")
 public interface DataDictionaryMapper {
 	
-	public List<DataDictionary> getDataDictionaryList(@Param("typeCode")String typeCode)throws Exception;
+	public List<DataDictionary> getDataDictionaryList(@Param("typeCode")String typeCode);
 }

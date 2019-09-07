@@ -24,7 +24,7 @@ import cn.demo.util.Constants;
 
 
 /**
- * �����ص�����
+ * 控制层
  * @author jw
  *
  */
@@ -42,9 +42,10 @@ public class LoginController {
      * ��תע�����
      * @return
      */
-	@RequestMapping(value = "/Register",method=RequestMethod.GET)
-	public String Register() {
-		return "Register";
+	@RequestMapping(value = "/manager",method=RequestMethod.GET)
+	public String Register(HttpSession session) {
+		session.removeAttribute(Constants.USER_SESSION);
+		return "manager";
 	}
 	
 	 /**
@@ -82,7 +83,8 @@ public class LoginController {
      * @return
      */
 	@RequestMapping(value = "/logout",method=RequestMethod.GET)
-	public String logout() {
+	public String logout(HttpSession session) {
+		session.removeAttribute(Constants.USER_SESSION);
 		return "BackLogin";
 	}
 	
@@ -132,10 +134,9 @@ public class LoginController {
 		if(session.getAttribute(Constants.USER_SESSION)==null){
 			return "redirect:/dev/Login";
 		}
-		
 		return "devUser/index";
 	}
-
+	
 	
 	 /**
      * 后台管理者 登录
@@ -154,11 +155,11 @@ public class LoginController {
      */
 	@RequestMapping(value = "/doBackLogin", method = RequestMethod.POST)
 	public String doLogin1(BackendUser backenduser, HttpServletRequest request,HttpSession session) {
-        log.info("DevUser**********************,user:"+backenduser);
-        BackendUser backenduser1 = backendUserService.getLoginBackendUser(backenduser);
-		if (backenduser1 != null) {
-			session.setAttribute("backenduser", backenduser1);
-			return "redirect:sos/backendUser/index2";
+        log.info("BackUser**********************,user:"+backenduser);
+        backenduser = backendUserService.getLoginBackendUser(backenduser);
+		if (backenduser != null) {
+			session.setAttribute(Constants.USER_SESSION, backenduser);
+			return "redirect:/sos/backendUser/index2";
 		} else {
 			request.setAttribute("message", "登录失败，请重新登录！");
 			return "BackLogin";

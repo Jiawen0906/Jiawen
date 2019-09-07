@@ -1,5 +1,8 @@
 package cn.demo.controller;
 
+import java.io.File;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -24,13 +27,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.mysql.jdbc.StringUtils;
 
-import cn.demo.entity.AppCategory;
+
 import cn.demo.entity.*;
-import cn.demo.entity.DataDictionary;
 import cn.demo.service.AppCategoryService;
 import cn.demo.service.AppInfoService;
+import cn.demo.service.AppVersionService;
 import cn.demo.service.DataDictionaryService;
 import cn.demo.service.DevUserService;
 import cn.demo.util.*;
@@ -62,10 +66,470 @@ public class DevUserController{
 	private DataDictionaryService dataDictionaryService;
 	@Resource
 	private AppCategoryService appCategoryService;
+	@Resource
+	private AppVersionService appVersionService;
+	
+	
+	@RequestMapping(value="/{appid}/sale",method=RequestMethod.PUT)
+	@ResponseBody
+	public Object sale(@PathVariable String appid,HttpSession session){
+		HashMap<String, Object> resultMap = new HashMap<String, Object>();
+		Integer appIdInteger = 0;
+		try{
+			appIdInteger = Integer.parseInt(appid);
+		}catch(Exception e){
+			appIdInteger = 0;
+		}
+		resultMap.put("errorCode", "0");
+		resultMap.put("appId", appid);
+		if(appIdInteger>0){
+			try {
+				DevUser devUser = (DevUser)session.getAttribute(Constants.USER_SESSION);
+				AppInfo appInfo = new AppInfo();
+				appInfo.setId(appIdInteger);
+				appInfo.setModifyBy(devUser.getId());
+				if(appInfoService.appsysUpdateSaleStatusByAppId(appInfo)){
+					resultMap.put("resultMsg", "success");
+				}else{
+					resultMap.put("resultMsg", "success");
+				}		
+			} catch (Exception e) {
+				resultMap.put("errorCode", "exception000001");
+			}
+		}else{
+			//errorCode:0涓烘甯�
+			resultMap.put("errorCode", "param000001");
+		}
+		
+		/*
+		 * resultMsg:success/failed
+		 * errorCode:exception000001
+		 * appId:appId
+		 * errorCode:param000001
+		 */
+		return resultMap;
+	}
 	
 	/**
-	 * app列表页
+	 * 查看app信息
+	 * @param appInfo
+	 * @return
 	 */
+	@RequestMapping(value="/appview/{id}",method=RequestMethod.GET)
+	public String view(@PathVariable String id,Model model){
+		AppInfo appInfo = null;
+		List<AppVersion> appVersionList = null;
+		try {
+			appInfo = appInfoService.getAppInfo(Integer.parseInt(id),null);
+			appVersionList = appVersionService.getAppVersionList(Integer.parseInt(id));
+		}catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		model.addAttribute("appVersionList", appVersionList);
+		model.addAttribute(appInfo);
+		return "devUser/appinfoview";
+	}
+	
+	/**
+	 * 修改app信息
+	 * @param id
+	 * @param model
+	 * @return
+	 */
+	@RequestMapping(value="/appinfomodify",method=RequestMethod.GET)
+	public String modifyAppInfo(@RequestParam("id") String id,
+								@RequestParam(value="error",required= false)String fileUploadError,
+								Model model){
+		AppInfo appInfo = null;
+		log.debug("modifyAppInfo --------- id: " + id);
+		if(null != fileUploadError && fileUploadError.equals("error1")){
+			fileUploadError = Constants.FILEUPLOAD_ERROR_1;
+		}else if(null != fileUploadError && fileUploadError.equals("error2")){
+			fileUploadError	= Constants.FILEUPLOAD_ERROR_2;
+		}else if(null != fileUploadError && fileUploadError.equals("error3")){
+			fileUploadError = Constants.FILEUPLOAD_ERROR_3;
+		}else if(null != fileUploadError && fileUploadError.equals("error4")){
+			fileUploadError = Constants.FILEUPLOAD_ERROR_4;
+		}
+		try {
+			appInfo = appInfoService.getAppInfo(Integer.parseInt(id),null);
+		}catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		model.addAttribute(appInfo);
+		model.addAttribute("fileUploadError",fileUploadError);
+		return "devUser/appinfomodify";
+	}
+	
+	/**
+	 * 修改app信息跳转
+	 * @param appInfo
+	 * @param session
+	 * @return
+	 */
+	@RequestMapping(value="/appinfomodifysave",method=RequestMethod.POST)
+	public String modifySave(AppInfo appInfo,HttpSession session,HttpServletRequest request,
+							@RequestParam(value="attach",required= false) MultipartFile attach){		
+		String logoPicPath =  null;
+		String logoLocPath =  null;
+		String APKName = appInfo.getAPKName();
+		if(!attach.isEmpty()){
+			String path = request.getSession().getServletContext().getRealPath("statics"+File.separator+"uploadfiles");
+			log.info("uploadFile path: " + path);
+			String oldFileName = attach.getOriginalFilename();//鍘熸枃浠跺悕
+			String prefix = FilenameUtils.getExtension(oldFileName);//鍘熸枃浠跺悗缂�
+			int filesize = 500000;
+			if(attach.getSize() > filesize){//涓婁紶澶у皬涓嶅緱瓒呰繃 50k
+            	 return "redirect:/sys/devUser/appinfomodify?id="+appInfo.getId()
+						 +"&error=error4";
+            }else if(prefix.equalsIgnoreCase("jpg") || prefix.equalsIgnoreCase("png") 
+			   ||prefix.equalsIgnoreCase("jepg") || prefix.equalsIgnoreCase("pneg")){//涓婁紶鍥剧墖鏍煎紡
+				 String fileName = APKName + ".jpg";//涓婁紶LOGO鍥剧墖鍛藉悕:apk鍚嶇О.apk
+				 File targetFile = new File(path,fileName);
+				 if(!targetFile.exists()){
+					 targetFile.mkdirs();
+				 }
+				 try {
+					attach.transferTo(targetFile);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return "redirect:/sys/devUser/appinfomodify?id="+appInfo.getId()
+							+"&error=error2";
+				} 
+				 logoPicPath = request.getContextPath()+"/statics/uploadfiles/"+fileName;
+				 logoLocPath = path+File.separator+fileName;
+            }else{
+            	return "redirect:/sys/devUser/appinfomodify?id="+appInfo.getId()
+						 +"&error=error3";
+            }
+		}
+		appInfo.setModifyBy(((DevUser)session.getAttribute(Constants.USER_SESSION)).getId());
+		appInfo.setModifyDate(new Date());
+		appInfo.setLogoLocPath(logoLocPath);
+		appInfo.setLogoPicPath(logoPicPath);
+		try {
+			if(appInfoService.modify(appInfo)){
+				return "redirect:/sys/devUser/appInfoList";
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return "devUser/appinfomodify";
+	}
+	
+	
+	/**
+	 * 鏍规嵁typeCode鏌ヨ鍑虹浉搴旂殑鏁版嵁瀛楀吀鍒楄〃
+	 * @param pid
+	 * @return
+	 */
+	@RequestMapping(value="/datadictionarylist.json",method=RequestMethod.GET)
+	@ResponseBody
+	public List<DataDictionary> getDataDicList (@RequestParam String tcode){
+		
+		log.debug("getDataDicList tcode ============ " + tcode);
+		return this.getDataDictionaryList(tcode);
+	}
+	
+	/**
+	 * 鏍规嵁parentId鏌ヨ鍑虹浉搴旂殑鍒嗙被绾у埆鍒楄〃
+	 * @param pid
+	 * @return
+	 */
+	@RequestMapping(value="/categorylevellist.json",method=RequestMethod.GET)
+	@ResponseBody
+	public List<AppCategory> getAppCategoryList (@RequestParam String pid){
+		log.debug("getAppCategoryList pid ============ " + pid);
+		if(pid.equals("")) pid = null;
+		return getCategoryList(pid);
+	}
+	
+	
+	
+	/**
+	 * 淇敼鎿嶄綔鏃讹紝鍒犻櫎鏂囦欢锛坙ogo鍥剧墖/apk鏂囦欢锛夛紝骞舵洿鏂版暟鎹簱锛坅pp_info/app_version锛�
+	 * @param fileUrlPath
+	 * @param fileLocPath
+	 * @param flag
+	 * @param id
+	 * @return
+	 */
+	@RequestMapping(value = "/delfile",method=RequestMethod.GET)
+	@ResponseBody
+	public Object delFile(@RequestParam(value="flag",required=false) String flag,
+						 @RequestParam(value="id",required=false) String id){
+		HashMap<String, String> resultMap = new HashMap<String, String>();
+		String fileLocPath = null;
+		if(flag == null || flag.equals("") ||
+			id == null || id.equals("")){
+			resultMap.put("result", "failed");
+		}else if(flag.equals("logo")){//鍒犻櫎logo鍥剧墖锛堟搷浣渁pp_info锛�
+			try {
+				fileLocPath = (appInfoService.getAppInfo(Integer.parseInt(id), null)).getLogoLocPath();
+				File file = new File(fileLocPath);
+			    if(file.exists())
+			     if(file.delete()){//鍒犻櫎鏈嶅姟鍣ㄥ瓨鍌ㄧ殑鐗╃悊鏂囦欢
+						if(appInfoService.deleteAppLogo(Integer.parseInt(id))){//鏇存柊琛�
+							resultMap.put("result", "success");
+						 }
+			    }
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}else if(flag.equals("apk")){//鍒犻櫎apk鏂囦欢锛堟搷浣渁pp_version锛�
+			try {
+				fileLocPath = (appVersionService.getAppVersionById(Integer.parseInt(id))).getApkLocPath();
+				File file = new File(fileLocPath);
+			    if(file.exists())
+			     if(file.delete()){//鍒犻櫎鏈嶅姟鍣ㄥ瓨鍌ㄧ殑鐗╃悊鏂囦欢
+						if(appVersionService.deleteApkFile(Integer.parseInt(id))){//鏇存柊琛�
+							resultMap.put("result", "success");
+						 }
+			    }
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return JSONArray.toJSONString(resultMap);
+	}
+	
+	
+	@RequestMapping(value="/delapp.json")
+	@ResponseBody
+	public Object delApp(@RequestParam String id){
+		log.debug("delApp appId===================== "+id);
+		HashMap<String, String> resultMap = new HashMap<String, String>();
+		if(StringUtils.isNullOrEmpty(id)){
+			resultMap.put("delResult", "notexist");
+		}else{
+			try {
+				if(appInfoService.appsysdeleteAppById(Integer.parseInt(id)))
+					resultMap.put("delResult", "true");
+				else
+					resultMap.put("delResult", "false");
+			} catch (NumberFormatException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return JSONArray.toJSONString(resultMap);
+	}
+
+
+	
+	/**
+	 * 淇敼鏈�鏂扮殑appVersion淇℃伅锛堣烦杞埌淇敼appVersion椤甸潰锛�
+	 * @param versionId
+	 * @param appId
+	 * @param model
+	 * @return
+	 */
+	@RequestMapping(value="/appversionmodify",method=RequestMethod.GET)
+	public String modifyAppVersion(@RequestParam("vid") String versionId,
+									@RequestParam("aid") String appId,
+									@RequestParam(value="error",required= false)String fileUploadError,
+									Model model){
+		AppVersion appVersion = null;
+		List<AppVersion> appVersionList = null;
+		if(null != fileUploadError && fileUploadError.equals("error1")){
+			fileUploadError = Constants.FILEUPLOAD_ERROR_1;
+		}else if(null != fileUploadError && fileUploadError.equals("error2")){
+			fileUploadError	= Constants.FILEUPLOAD_ERROR_2;
+		}else if(null != fileUploadError && fileUploadError.equals("error3")){
+			fileUploadError = Constants.FILEUPLOAD_ERROR_3;
+		}
+		try {
+			appVersion = appVersionService.getAppVersionById(Integer.parseInt(versionId));
+			appVersionList = appVersionService.getAppVersionList(Integer.parseInt(appId));
+		}catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		model.addAttribute(appVersion);
+		model.addAttribute("appVersionList",appVersionList);
+		model.addAttribute("fileUploadError",fileUploadError);
+		return "devUser/appversionmodify";
+	}
+	
+	/**
+	 * 淇濆瓨淇敼鍚庣殑appVersion
+	 * @param appVersion
+	 * @param session
+	 * @return
+	 */
+	@RequestMapping(value="/appversionmodifysave",method=RequestMethod.POST)
+	public String modifyAppVersionSave(AppVersion appVersion,HttpSession session,HttpServletRequest request,
+					@RequestParam(value="attach",required= false) MultipartFile attach){	
+		
+		String downloadLink =  null;
+		String apkLocPath = null;
+		String apkFileName = null;
+		if(!attach.isEmpty()){
+			String path = request.getSession().getServletContext().getRealPath("statics"+File.separator+"uploadfiles");
+			log.info("uploadFile path: " + path);
+			String oldFileName = attach.getOriginalFilename();//鍘熸枃浠跺悕
+			String prefix = FilenameUtils.getExtension(oldFileName);//鍘熸枃浠跺悗缂�
+			if(prefix.equalsIgnoreCase("apk")){//apk鏂囦欢鍛藉悕锛歛pk鍚嶇О+鐗堟湰鍙�+.apk
+				 String apkName = null;
+				 try {
+					apkName = appInfoService.getAppInfo(appVersion.getAppId(),null).getAPKName();
+				 } catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				 }
+				 if(apkName == null || "".equals(apkName)){
+					 return "redirect:/sys/devUser/appversionmodify?vid="+appVersion.getId()
+							 +"&aid="+appVersion.getAppId()
+							 +"&error=error1";
+				 }
+				 apkFileName = apkName + "-" +appVersion.getVersionNo() + ".apk";
+				 File targetFile = new File(path,apkFileName);
+				 if(!targetFile.exists()){
+					 targetFile.mkdirs();
+				 }
+				 try {
+					attach.transferTo(targetFile);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return "redirect:/sys/devUser/appversionmodify?vid="+appVersion.getId()
+							 +"&aid="+appVersion.getAppId()
+							 +"&error=error2";
+				} 
+				downloadLink = request.getContextPath()+"/statics/uploadfiles/"+apkFileName;
+				apkLocPath = path+File.separator+apkFileName;
+			}else{
+				return "redirect:/sys/devUser/appversionmodify?vid="+appVersion.getId()
+						 +"&aid="+appVersion.getAppId()
+						 +"&error=error3";
+			}
+		}
+		appVersion.setModifyBy(((DevUser)session.getAttribute(Constants.USER_SESSION)).getId());
+		appVersion.setModifyDate(new Date());
+		appVersion.setDownloadLink(downloadLink);
+		appVersion.setApkLocPath(apkLocPath);
+		appVersion.setApkFileName(apkFileName);
+		try {
+			if(appVersionService.modify(appVersion)){
+				return "redirect:/sys/devUser/appInfoList";
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return "devUser/appversionmodify";
+	}
+	
+	
+	/**
+	 * 澧炲姞appversion淇℃伅锛堣烦杞埌鏂板app鐗堟湰椤甸潰锛�
+	 * @param appInfo
+	 * @return
+	 */
+	@RequestMapping(value="/appversionadd",method=RequestMethod.GET)
+	public String addVersion(@RequestParam(value="id")String appId,
+							 @RequestParam(value="error",required= false)String fileUploadError,
+							 AppVersion appVersion,Model model){
+		log.debug("fileUploadError============> " + fileUploadError);
+		if(null != fileUploadError && fileUploadError.equals("error1")){
+			fileUploadError = Constants.FILEUPLOAD_ERROR_1;
+		}else if(null != fileUploadError && fileUploadError.equals("error2")){
+			fileUploadError	= Constants.FILEUPLOAD_ERROR_2;
+		}else if(null != fileUploadError && fileUploadError.equals("error3")){
+			fileUploadError = Constants.FILEUPLOAD_ERROR_3;
+		}
+		appVersion.setAppId(Integer.parseInt(appId));
+		List<AppVersion> appVersionList = null;
+		try {
+			appVersionList = appVersionService.getAppVersionList(Integer.parseInt(appId));
+			appVersion.setAppName((appInfoService.getAppInfo(Integer.parseInt(appId),null)).getSoftwareName());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		model.addAttribute("appVersionList", appVersionList);
+		model.addAttribute(appVersion);
+		model.addAttribute("fileUploadError",fileUploadError);
+		return "devUser/appversionadd";
+	}
+	/**
+	 * 淇濆瓨鏂板appversion鏁版嵁锛堝瓙琛級-涓婁紶璇ョ増鏈殑apk鍖�
+	 * @param appInfo
+	 * @param appVersion
+	 * @param session
+	 * @param request
+	 * @param attach
+	 * @return
+	 */
+	@RequestMapping(value="/addversionsave",method=RequestMethod.POST)
+	public String addVersionSave(AppVersion appVersion,HttpSession session,HttpServletRequest request,
+						@RequestParam(value="a_downloadLink",required= false) MultipartFile attach ){		
+		String downloadLink =  null;
+		String apkLocPath = null;
+		String apkFileName = null;
+		if(!attach.isEmpty()){
+			String path = request.getSession().getServletContext().getRealPath("statics"+File.separator+"uploadfiles");
+			log.info("uploadFile path: " + path);
+			String oldFileName = attach.getOriginalFilename();//鍘熸枃浠跺悕
+			String prefix = FilenameUtils.getExtension(oldFileName);//鍘熸枃浠跺悗缂�
+			if(prefix.equalsIgnoreCase("apk")){//apk鏂囦欢鍛藉悕锛歛pk鍚嶇О+鐗堟湰鍙�+.apk
+				 String apkName = null;
+				 try {
+					apkName = appInfoService.getAppInfo(appVersion.getAppId(),null).getAPKName();
+				 } catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				 }
+				 if(apkName == null || "".equals(apkName)){
+					 return "redirect:/sys/devUser/appversionadd?id="+appVersion.getAppId()
+							 +"&error=error1";
+				 }
+				 apkFileName = apkName + "-" +appVersion.getVersionNo() + ".apk";
+				 File targetFile = new File(path,apkFileName);
+				 if(!targetFile.exists()){
+					 targetFile.mkdirs();
+				 }
+				 try {
+					attach.transferTo(targetFile);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return "redirect:/sys/devUser/appversionadd?id="+appVersion.getAppId()
+							 +"&error=error2";
+				} 
+				downloadLink = request.getContextPath()+"/statics/uploadfiles/"+apkFileName;
+				apkLocPath = path+File.separator+apkFileName;
+			}else{
+				return "redirect:/sys/devUser/appversionadd?id="+appVersion.getAppId()
+						 +"&error=error3";
+			}
+		}
+		appVersion.setCreatedBy(((DevUser)session.getAttribute(Constants.USER_SESSION)).getId());
+		appVersion.setCreationDate(new Date());
+		appVersion.setDownloadLink(downloadLink);
+		appVersion.setApkLocPath(apkLocPath);
+		appVersion.setApkFileName(apkFileName);
+		try {
+			if(appVersionService.appsysadd(appVersion)){
+				return "redirect:/sys/devUser/appInfoList";
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return "redirect:/sys/devUser/appversionadd?id="+appVersion.getAppId();
+	}
+	
+	
 	@RequestMapping(value="/appInfoList")
 	public String getAppInfoList(Model model,HttpSession session,
 							@RequestParam(value="querySoftwareName",required=false) String querySoftwareName,
@@ -88,12 +552,12 @@ public class DevUserController{
 		List<AppInfo> appInfoList = null;
 		List<DataDictionary> statusList = null;
 		List<DataDictionary> flatFormList = null;
-		List<AppCategory> categoryLevel1List = null;//列出一级分类列表，注：二级和三级分类列表通过异步ajax获取
+		List<AppCategory> categoryLevel1List = null;//鍒楀嚭涓�绾у垎绫诲垪琛紝娉細浜岀骇鍜屼笁绾у垎绫诲垪琛ㄩ�氳繃寮傛ajax鑾峰彇
 		List<AppCategory> categoryLevel2List = null;
 		List<AppCategory> categoryLevel3List = null;
-		//页面容量
+		//椤甸潰瀹归噺
 		int pageSize = Constants.pageSize;
-		//当前页码
+		//褰撳墠椤电爜
 		Integer currentPageNo = 1;
 		
 		if(pageIndex != null){
@@ -125,7 +589,7 @@ public class DevUserController{
 			queryFlatformId = Integer.parseInt(_queryFlatformId);
 		}
 		
-		//总数量（表）
+		//鎬绘暟閲忥紙琛級
 		int totalCount = 0;
 		try {
 			totalCount = appInfoService.getAppInfoCount(querySoftwareName, queryStatus, queryCategoryLevel1, queryCategoryLevel2, queryCategoryLevel3, queryFlatformId, devId);
@@ -134,13 +598,13 @@ public class DevUserController{
 			e.printStackTrace();
 		}
 		
-		//总页数
+		//鎬婚〉鏁�
 		PageSupport pages = new PageSupport();
 		pages.setCurrentPageNo(currentPageNo);
 		pages.setPageSize(pageSize);
 		pages.setTotalCount(totalCount);
 		int totalPageCount = pages.getTotalPageCount();
-		//控制首页和尾页
+		//鎺у埗棣栭〉鍜屽熬椤�
 		if(currentPageNo < 1){
 			currentPageNo = 1;
 		}else if(currentPageNo > totalPageCount){
@@ -149,7 +613,6 @@ public class DevUserController{
 		try {
 			appInfoList = appInfoService.getAppInfoList(querySoftwareName, queryStatus, queryCategoryLevel1, queryCategoryLevel2, queryCategoryLevel3, queryFlatformId, devId, currentPageNo, pageSize);
 			statusList = this.getDataDictionaryList("APP_STATUS");
-			                  
 			flatFormList = this.getDataDictionaryList("APP_FLATFORM");
 			categoryLevel1List = appCategoryService.getAppCategoryListByParentId(null);
 		} catch (Exception e) {
@@ -168,7 +631,7 @@ public class DevUserController{
 		model.addAttribute("queryCategoryLevel3", queryCategoryLevel3);
 		model.addAttribute("queryFlatformId", queryFlatformId);
 		
-		////二级分类列表和三级分类列表---回显
+		//浜岀骇鍒嗙被鍒楄〃鍜屼笁绾у垎绫诲垪琛�---鍥炴樉
 		if(queryCategoryLevel2 != null && !queryCategoryLevel2.equals("")){
 			categoryLevel2List = getCategoryList(queryCategoryLevel1.toString());
 			model.addAttribute("categoryLevel2List", categoryLevel2List);
@@ -179,8 +642,18 @@ public class DevUserController{
 		}
 		return "devUser/appInfoList";
 	}
-
-
+	
+	
+	public List<DataDictionary> getDataDictionaryList(String typeCode){
+		List<DataDictionary> dataDictionaryList = null;
+		try {
+			dataDictionaryList = dataDictionaryService.getDataDictionaryList(typeCode);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return dataDictionaryList;
+	}
 	
 	public List<AppCategory> getCategoryList (String pid){
 		List<AppCategory> categoryLevelList = null;
@@ -192,21 +665,108 @@ public class DevUserController{
 		}
 		return categoryLevelList;
 	}
+	
 
-
-
-	public List<DataDictionary> getDataDictionaryList(String typeCode){
-		List<DataDictionary> dataDictionaryList = null;
+	/**
+	 * app列表添加
+	 * @param appInfo
+	 * @return
+	 */
+	@RequestMapping(value="/appinfoadd",method=RequestMethod.GET)
+	public String add(@ModelAttribute("appInfo") AppInfo appInfo){
+		return "devUser/appinfoadd";
+	}
+	
+	/**
+	 * app 列表添加跳转
+	 * @param appInfo
+	 * @param session
+	 * @return
+	 */
+	@RequestMapping(value="/appinfoaddsave",method=RequestMethod.POST)
+	public String addSave(AppInfo appInfo,HttpSession session,HttpServletRequest request,
+					@RequestParam(value="a_logoPicPath",required= false) MultipartFile attach){		
+		
+		String logoPicPath =  null;
+		String logoLocPath =  null;
+		if(!attach.isEmpty()){
+			String path = request.getSession().getServletContext().getRealPath("statics"+java.io.File.separator+"uploadfiles");
+			log.info("uploadFile path: " + path);
+			String oldFileName = attach.getOriginalFilename();//鍘熸枃浠跺悕
+			String prefix = FilenameUtils.getExtension(oldFileName);//鍘熸枃浠跺悗缂�
+			int filesize = 500000;
+			if(attach.getSize() > filesize){//涓婁紶澶у皬涓嶅緱瓒呰繃 50k
+				request.setAttribute("fileUploadError", Constants.FILEUPLOAD_ERROR_4);
+				return "developer/appinfoadd";
+            }else if(prefix.equalsIgnoreCase("jpg") || prefix.equalsIgnoreCase("png") 
+			   ||prefix.equalsIgnoreCase("jepg") || prefix.equalsIgnoreCase("pneg")){//涓婁紶鍥剧墖鏍煎紡
+				 String fileName = appInfo.getAPKName() + ".jpg";//涓婁紶LOGO鍥剧墖鍛藉悕:apk鍚嶇О.apk
+				 File targetFile = new File(path,fileName);
+				 if(!targetFile.exists()){
+					 targetFile.mkdirs();
+				 }
+				 try {
+					attach.transferTo(targetFile);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					request.setAttribute("fileUploadError", Constants.FILEUPLOAD_ERROR_2);
+					return "developer/appinfoadd";
+				} 
+				 logoPicPath = request.getContextPath()+"/statics/uploadfiles/"+fileName;
+				 logoLocPath = path+File.separator+fileName;
+			}else{
+				request.setAttribute("fileUploadError", Constants.FILEUPLOAD_ERROR_3);
+				return "devUser/appinfoadd";
+			}
+		}
+		appInfo.setCreatedBy(((DevUser)session.getAttribute(Constants.USER_SESSION)).getId());
+		appInfo.setCreationDate(new Date());
+		appInfo.setLogoPicPath(logoPicPath);
+		appInfo.setLogoLocPath(logoLocPath);
+		appInfo.setDevId(((DevUser)session.getAttribute(Constants.USER_SESSION)).getId());
+		appInfo.setStatus(1);
 		try {
-			dataDictionaryList = dataDictionaryService.getDataDictionaryList(typeCode);
+			if(appInfoService.add(appInfo)){
+				return "redirect:/sys/devUser/appInfoList";
+			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return dataDictionaryList;
+		return "devUser/appinfoadd";
 	}
+	
+	
 
-
+	/**
+	 * 查询APKName
+	 * @param apkName
+	 * @return
+	 */
+	@RequestMapping(value="/apkexist.json",method=RequestMethod.GET)
+	@ResponseBody
+	public Object apkNameIsExit(@RequestParam String APKName){
+		HashMap<String, String> resultMap = new HashMap<String, String>();
+		if(StringUtils.isNullOrEmpty(APKName)){
+			resultMap.put("APKName", "empty");
+		}else{
+			AppInfo appInfo = null;
+			try {
+				appInfo = appInfoService.getAppInfo(null, APKName);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			if(null != appInfo)
+				resultMap.put("APKName", "exist");
+			else
+				resultMap.put("APKName", "noexist");
+		}
+		return JSONArray.toJSONString(resultMap);
+	}
+	
+	
 	
 	
 

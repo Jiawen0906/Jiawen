@@ -203,4 +203,11 @@ $(".deleteApp").on("click",function(){
 	}
 });
 
+/*$("form").submit(function(){
+	  var softwareName=$("#softwareName").val();
+	  $("body").load("<%=request.getContextPath()%>/sys/deUser/appInfoList","softwareName="+softwareName);
+});
+*/
+
+
 	

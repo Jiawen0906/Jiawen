@@ -8,5 +8,5 @@ import cn.demo.entity.AppCategory;
 @Repository("appCategoryMapper")
 public interface AppCategoryMapper {
 	
-	public List<AppCategory> getAppCategoryListByParentId(@Param("parentId")Integer parentId)throws Exception;
+	public List<AppCategory> getAppCategoryListByParentId(@Param("parentId")Integer parentId);
 }

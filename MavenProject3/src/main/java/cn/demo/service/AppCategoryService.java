@@ -10,5 +10,5 @@ public interface AppCategoryService {
 	 * @return
 	 * @throws Exception
 	 */
-	public List<AppCategory> getAppCategoryListByParentId(Integer parentId)throws Exception;
+	public List<AppCategory> getAppCategoryListByParentId(Integer parentId);
 }
